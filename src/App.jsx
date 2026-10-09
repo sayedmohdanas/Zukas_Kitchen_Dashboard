@@ -28,10 +28,6 @@ const MENU_ITEMS = [
   { id: 'coke', name: 'Coke (500ml)', price: 40 },
 ];
 
-const VILLAGES = [
-  "Khankah", "Bindwal", "Dewabindwal", "Jairajpur", "Jagmalpur", 
-  "Hari Pur", "Naseer Pur", "Gulwa Gauri", "Alauddin Patti"
-];
 
 const INITIAL_ORDERS = [
   {
@@ -48,6 +44,8 @@ const INITIAL_ORDERS = [
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [villages, setVillages] = useState([]);
+  const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Data States
@@ -67,7 +65,7 @@ function App() {
   // Offer Modal State
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState(null);
-  const [offerForm, setOfferForm] = useState({ label: '', wheelLabel: '', subLabel: '', discount: 0 });
+  const [offerForm, setOfferForm] = useState({ label: '', wheelLabel: '', subLabel: '', discount: 0, weight: 10 });
 
   // Review Modal State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -185,6 +183,48 @@ function App() {
           }
         };
 
+        // Fetch Villages
+        const villagesRef = collection(db, "villages");
+        const villagesSnap = await getDocs(villagesRef);
+        let fetchedVillages = [];
+        villagesSnap.forEach(doc => {
+          fetchedVillages.push({ id: doc.id, name: doc.data().name });
+        });
+        
+        if (fetchedVillages.length === 0) {
+            const defaultVillages = [ "Khankah", "Bindwal", "Dewabindwal", "Jairajpur", "Jagmalpur", "Hari Pur", "Naseer Pur", "Gulwa Gauri", "Alauddin Patti" ];
+            for (const v of defaultVillages) {
+               const docRef = await addDoc(collection(db, "villages"), { name: v });
+               fetchedVillages.push({ id: docRef.id, name: v });
+            }
+        }
+        const PREFERRED_ORDER = [
+          "khankah", "bindwal", "jairajpur", "jagmalpur", "hari pur", "haripur", 
+          "alauddin patti", "alauddin pat", "gulwa gauri", "gulwa", "naseer pur", "naseerpur"
+        ];
+        
+        fetchedVillages.sort((a,b) => {
+          const aLower = a.name.toLowerCase();
+          const bLower = b.name.toLowerCase();
+          let rankA = PREFERRED_ORDER.findIndex(p => aLower.includes(p));
+          let rankB = PREFERRED_ORDER.findIndex(p => bLower.includes(p));
+          rankA = rankA === -1 ? 999 : rankA;
+          rankB = rankB === -1 ? 999 : rankB;
+          if (rankA !== rankB) return rankA - rankB;
+          return a.name.localeCompare(b.name);
+        });
+        
+        // Let's also deduplicate the dashboard state just in case
+        const unique = [];
+        const seen = new Set();
+        fetchedVillages.forEach(v => {
+          if(!seen.has(v.name.toLowerCase().trim())) {
+            seen.add(v.name.toLowerCase().trim());
+            unique.push(v);
+          }
+        });
+        setVillages(unique);
+
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -214,7 +254,42 @@ function App() {
       default: return status;
     }
   };
+  const handleAddVillage = async (e) => {
+    e.preventDefault();
+    if(!newVillageName.trim()) return;
+    try {
+      const docRef = await addDoc(collection(db, "villages"), { name: newVillageName.trim() });
+      setVillages([...villages, { id: docRef.id, name: newVillageName.trim() }].sort((a,b) => a.name.localeCompare(b.name)));
+      setNewVillageName('');
+    } catch(e) {
+      console.error(e);
+      alert("Error adding village");
+    }
+  };
 
+  const handleDeleteVillage = async (id) => {
+    if(!window.confirm("Delete this village?")) return;
+    try {
+      await deleteDoc(doc(db, "villages", id));
+      setVillages(villages.filter(v => v.id !== id));
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const handleEditVillage = async (village) => {
+    const newName = window.prompt("Edit Village Name:", village.name);
+    if (!newName || newName.trim() === "" || newName === village.name) return;
+    
+    try {
+      const docRef = doc(db, "villages", village.id);
+      await updateDoc(docRef, { name: newName.trim() });
+      setVillages(villages.map(v => v.id === village.id ? { ...v, name: newName.trim() } : v));
+    } catch(e) {
+      console.error("Error updating village:", e);
+      alert("Failed to update village.");
+    }
+  };
   const handleAddOrderItem = () => setNewOrder({ ...newOrder, items: [...newOrder.items, { name: '', qty: 1, price: 0 }] });
   const handleOrderItemChange = (index, value) => {
     const selected = MENU_ITEMS.find(item => item.name === value);
@@ -285,7 +360,8 @@ function App() {
           label: offerForm.label,
           wheelLabel: offerForm.wheelLabel,
           subLabel: offerForm.subLabel,
-          value: offerForm.discount,
+          value: Number(offerForm.discount),
+          weight: Number(offerForm.weight),
           updatedAt: serverTimestamp()
         });
         // Update local state
@@ -298,8 +374,8 @@ function App() {
           label: offerForm.label,
           wheelLabel: offerForm.wheelLabel || offerForm.label,
           subLabel: offerForm.subLabel || "",
-          value: offerForm.discount,
-          weight: 10,
+          value: Number(offerForm.discount),
+          weight: Number(offerForm.weight),
           enabled: true,
           isWinning: true,
           type: "discount",
@@ -337,8 +413,9 @@ function App() {
       label: offer.label, 
       wheelLabel: offer.wheelLabel || '', 
       subLabel: offer.subLabel || '', 
-      discount: offer.discount 
-    } : { label: '', wheelLabel: '', subLabel: '', discount: 0 });
+      discount: offer.discount,
+      weight: offer.weight !== undefined ? offer.weight : 10
+    } : { label: '', wheelLabel: '', subLabel: '', discount: 0, weight: 10 });
     setIsOfferModalOpen(true);
   };
 
@@ -416,6 +493,9 @@ function App() {
           </div>
           <div className={`nav-item ${activeTab === 'offers' ? 'active' : ''}`} onClick={() => { setActiveTab('offers'); setIsSidebarOpen(false); }}>
             <Ticket size={20} /><span>Spinner Offers</span>
+          </div>
+          <div className={`nav-item ${activeTab === 'locations' ? 'active' : ''}`} onClick={() => { setActiveTab('locations'); setIsSidebarOpen(false); }}>
+            <MapPin size={20} /><span>Locations (Villages)</span>
           </div>
           <div className="nav-item" onClick={() => alert("Feature coming soon")}>
             <Users size={20} /><span>Customers</span>
@@ -626,6 +706,57 @@ function App() {
           )}
 
           {/* Offers Tab */}
+          {activeTab === 'locations' && (
+            <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '24px' }}>
+              <div className="section-header">
+                <h2 className="section-title">Manage Delivery Villages</h2>
+              </div>
+              
+              <form onSubmit={handleAddVillage} style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Enter new village name..." 
+                  value={newVillageName}
+                  onChange={e => setNewVillageName(e.target.value)}
+                  required 
+                  style={{ flex: 1 }}
+                />
+                <button type="submit" className="btn-primary">Add Village</button>
+              </form>
+
+              <div className="orders-table-wrapper">
+                <table className="orders-table font-inter" style={{ minWidth: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Village Name</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence>
+                      {villages.map((village) => (
+                        <motion.tr key={village.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <MapPin size={16} color="var(--accent-primary)" /> {village.name}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                              <button className="btn-icon" onClick={() => handleEditVillage(village)} title="Edit Village"><Edit2 size={16} /></button>
+                              <button className="btn-icon danger" onClick={() => handleDeleteVillage(village.id)} title="Delete Village"><Trash2 size={16} /></button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'offers' && (
             <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '24px' }}>
               <div className="section-header">
@@ -640,6 +771,7 @@ function App() {
                     <tr>
                       <th>Offer Label / Prize Text</th>
                       <th>Discount Value (₹)</th>
+                      <th>Probability (%)</th>
                       <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
@@ -662,6 +794,11 @@ function App() {
                               ) : (
                                 <span style={{ color: 'var(--text-secondary)' }}>No Discount Amount</span>
                               )}
+                            </td>
+                            <td>
+                              <span style={{ color: 'var(--text-secondary)' }}>
+                                {offer.weight}%
+                              </span>
                             </td>
                             <td>
                               <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
@@ -722,7 +859,7 @@ function App() {
                   <div className="form-group">
                     <label className="form-label">Village / Location</label>
                     <input list="villages" className="form-input" placeholder="Select or type village..." value={newOrder.village} onChange={e => setNewOrder({ ...newOrder, village: e.target.value })} />
-                    <datalist id="villages">{VILLAGES.map(v => <option key={v} value={v} />)}</datalist>
+                    <datalist id="villages">{villages.map(v => <option key={v.id} value={v.name} />)}</datalist>
                   </div>
 
                   <div className="form-group">
@@ -899,20 +1036,35 @@ function App() {
                     />
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Discount Value (₹)</label>
-                  <input 
-                    type="number" 
-                    className="form-input" 
-                    min="0"
-                    placeholder="e.g. 50"
-                    value={offerForm.discount} 
-                    onChange={e => setOfferForm({...offerForm, discount: parseInt(e.target.value) || 0})} 
-                    required 
-                  />
-                  <small style={{ color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                    Set to 0 for free items. The system will subtract this amount from the total.
-                  </small>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Discount Value (₹)</label>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      min="0"
+                      placeholder="e.g. 50"
+                      value={offerForm.discount} 
+                      onChange={e => setOfferForm({...offerForm, discount: parseInt(e.target.value) || 0})} 
+                      required 
+                    />
+                    <small style={{ color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
+                      Set to 0 for free items.
+                    </small>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Probability (%)</label>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      min="0"
+                      max="100"
+                      placeholder="e.g. 10"
+                      value={offerForm.weight} 
+                      onChange={e => setOfferForm({...offerForm, weight: parseInt(e.target.value) || 0})} 
+                      required 
+                    />
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="btn-secondary" onClick={() => setIsOfferModalOpen(false)}>Cancel</button>
