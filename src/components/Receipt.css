@@ -10,10 +10,12 @@
   pointer-events: none;
 }
 
-/* Receipt Container */
 .receipt-container {
   width: 600px;
-  margin: 0 auto;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
   font-family: 'Inter', sans-serif;
   color: #1a1a1a;
   background-color: #fdfbf7;

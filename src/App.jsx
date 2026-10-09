@@ -384,6 +384,10 @@ function App() {
         backgroundColor: '#fdfaf3',
         width: 600,
         windowWidth: 600,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
         onclone: (doc) => {
           const wrapper = doc.querySelector('.receipt-wrapper');
           if (wrapper) wrapper.style.opacity = '1';
