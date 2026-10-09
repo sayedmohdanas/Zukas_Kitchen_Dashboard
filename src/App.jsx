@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Pizza, Users, Bell, CheckCircle2, Clock, 
   ChefHat, MoreVertical, Plus, X, Phone, MessageCircle, 
-  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2
+  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from './firebase/firebase.js';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import localPrizes from './data/prizes.js';
 
 // Menu Inventory from Zukas Kitchen
@@ -45,6 +45,7 @@ const INITIAL_ORDERS = [
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [villages, setVillages] = useState([]);
+  const [dailySpins, setDailySpins] = useState(0);
   const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -148,6 +149,18 @@ function App() {
           return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
         });
         
+        // Fetch Today's Spins
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        try {
+          const spinsRef = collection(db, "spins");
+          const spinsQuery = query(spinsRef, where("createdAt", ">=", Timestamp.fromDate(today)));
+          const spinsSnap = await getDocs(spinsQuery);
+          setDailySpins(spinsSnap.size);
+        } catch (e) {
+          console.warn("Could not fetch spins:", e);
+        }
+
         setOffers(fetchedOffers);
 
         // --- ONE-TIME RESET SCRIPT ---
@@ -557,6 +570,20 @@ function App() {
                     <span className="stat-value">{orders.filter(o => o.status === 'ready').length}</span>
                   </div>
                   <div className="stat-icon green"><CheckCircle2 size={24} /></div>
+                </div>
+                <div className="glass-panel stat-card">
+                  <div className="stat-info">
+                    <span className="stat-label">Today's Spins</span>
+                    <span className="stat-value">{dailySpins}</span>
+                  </div>
+                  <div className="stat-icon purple"><Gift size={24} /></div>
+                </div>
+                <div className="glass-panel stat-card">
+                  <div className="stat-info">
+                    <span className="stat-label">Today's Sales</span>
+                    <span className="stat-value">₹{orders.reduce((sum, o) => sum + o.total, 0)}</span>
+                  </div>
+                  <div className="stat-icon blue"><BarChart2 size={24} /></div>
                 </div>
               </motion.div>
 
