@@ -51,7 +51,6 @@ function App() {
   
   const [reportDate, setReportDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 1); // default to yesterday
     return d.toISOString().split('T')[0];
   });
   const [reportSpins, setReportSpins] = useState(0);
