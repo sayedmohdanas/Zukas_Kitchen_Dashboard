@@ -43,7 +43,7 @@ const Receipt = ({ order }) => {
         {/* Info Region */}
         <div className="receipt-info-grid">
           <div>
-            <div className="info-row"><strong>Order No:</strong> {order.id?.substring(0,6).toUpperCase() || 'ZK-1000'}</div>
+            <div className="info-row"><strong>Order No:</strong> {order.id?.toUpperCase() || 'ZK-1000'}</div>
             <div className="info-row"><strong>Date:</strong> {orderDate}</div>
             <div className="info-row"><strong>Bill Time:</strong> {billTime}</div>
             <div className="info-row"><strong>Delivery Time:</strong> {order.customDeliveryTime || 'ASAP'}</div>
