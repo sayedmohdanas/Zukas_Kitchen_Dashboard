@@ -379,7 +379,14 @@ function App() {
       const element = document.getElementById('receipt-capture-area');
       if (!element) return;
       
-      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#fdfaf3' });
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        backgroundColor: '#fdfaf3',
+        onclone: (doc) => {
+          const wrapper = doc.querySelector('.receipt-wrapper');
+          if (wrapper) wrapper.style.opacity = '1';
+        }
+      });
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
       
       if (!blob) return;

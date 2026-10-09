@@ -2,8 +2,13 @@
 /* Print Styles removed for html2canvas */
 .receipt-wrapper {
   position: absolute;
-  top: -9999px;
-  left: -9999px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  max-width: 800px;
+  z-index: -100;
+  opacity: 0.01;
+  pointer-events: none;
 }
 
 /* Receipt Container */
