@@ -892,7 +892,7 @@ function App() {
                 <h2 className="section-title">Manage Delivery Villages</h2>
               </div>
               
-              <form onSubmit={handleAddVillage} style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+              <form onSubmit={handleAddVillage} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <input 
                   type="text" 
                   className="form-input" 

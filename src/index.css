@@ -774,6 +774,43 @@ h1, h2, h3, h4, h5, h6 {
   .btn-primary {
     padding: 10px;
   }
+
+  /* Make tables responsive (stack as cards) */
+  .orders-table-wrapper {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  
+  .orders-table, .orders-table thead, .orders-table tbody, .orders-table th, .orders-table td, .orders-table tr {
+    display: block;
+    min-width: 100% !important;
+  }
+  
+  .orders-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .orders-table tr {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+  
+  .orders-table td {
+    border: none;
+    position: relative;
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  
+  .orders-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
 }
 
 @media (max-width: 480px) {
