@@ -1074,7 +1074,15 @@ function App() {
                   alert("Failed to add expense");
                 }
               }} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                <input type="text" className="form-input" placeholder="Expense description..." value={newExpenseName} onChange={e => setNewExpenseName(e.target.value)} required style={{ flex: 2, minWidth: '200px' }} />
+                <input list="expense-options" className="form-input" placeholder="Expense description (e.g. Cheese, Chicken)..." value={newExpenseName} onChange={e => setNewExpenseName(e.target.value)} required style={{ flex: 2, minWidth: '200px' }} />
+                <datalist id="expense-options">
+                  <option value="Cheese" />
+                  <option value="Chicken" />
+                  <option value="Maida" />
+                  <option value="Vegetable" />
+                  <option value="Packaging" />
+                  <option value="Fuel" />
+                </datalist>
                 <input type="number" className="form-input" placeholder="Amount (₹)" value={newExpenseAmount} onChange={e => setNewExpenseAmount(e.target.value)} required style={{ flex: 1, minWidth: '100px' }} />
                 <button type="submit" className="btn-primary" style={{ flexShrink: 0 }}>Add Expense</button>
               </form>
