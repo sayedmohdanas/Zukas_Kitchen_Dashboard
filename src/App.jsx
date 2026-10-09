@@ -708,7 +708,7 @@ function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (pinInput === '1234' || pinInput === '8543') { // Owner
+    if (pinInput === '979599') { // Owner
       localStorage.setItem('zukas_role', 'owner');
       setAuthRole('owner');
     } else if (pinInput === '5678') { // Delivery
