@@ -1372,7 +1372,7 @@ function App() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Phone Number</label>
-                    <input type="text" className="form-input" placeholder="+91..." value={newOrder.phone} onChange={e => setNewOrder({ ...newOrder, phone: e.target.value })} />
+                    <input type="tel" className="form-input" placeholder="10-digit mobile number" value={newOrder.phone} onChange={e => setNewOrder({ ...newOrder, phone: e.target.value.replace(/\D/g, '') })} pattern="[0-9]{10}" maxLength="10" title="Phone number must be exactly 10 digits" required />
                   </div>
                 </div>
 
