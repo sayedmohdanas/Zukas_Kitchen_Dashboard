@@ -1061,7 +1061,7 @@ function App() {
                                   <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)}><Printer size={16} /></button>
                                   {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
-                                  {((authRole === 'delivery' && order.status === 'ready') || (authRole === 'owner' && order.status !== 'delivered')) && (
+                                  {((authRole === 'delivery' || authRole === 'owner') && order.status !== 'delivered') && (
                                     <button className="btn-icon success" title="Mark as Delivered" onClick={() => markAsDelivered(order.id)} style={{ background: 'var(--success)', color: 'white' }}>
                                       <CheckCheck size={16} />
                                     </button>
