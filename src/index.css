@@ -403,7 +403,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  min-width: 800px; /* Forces scrolling on small screens instead of squishing */
+  min-width: 1000px; /* Forces scrolling on small screens instead of squishing */
 }
 
 .orders-table th {

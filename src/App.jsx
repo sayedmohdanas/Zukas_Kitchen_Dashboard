@@ -970,7 +970,7 @@ function App() {
                           filteredOrders.map((order) => (
                             <motion.tr key={order.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
                               <td>
-                                <div style={{ fontWeight: 600, marginBottom: '4px' }}>{order.id}</div>
+                                <div style={{ fontWeight: 600, marginBottom: '4px', whiteSpace: 'nowrap' }}>{order.id}</div>
                                 {order.source === 'whatsapp' ? (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#25D366', fontSize: '12px' }}><MessageCircle size={14} /> WhatsApp</div>
                                 ) : (
