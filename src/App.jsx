@@ -48,6 +48,15 @@ function App() {
   const [dailySpins, setDailySpins] = useState(0);
   const [yesterdaySales, setYesterdaySales] = useState(0);
   const [yesterdayPizzas, setYesterdayPizzas] = useState(0);
+  
+  const [reportDate, setReportDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1); // default to yesterday
+    return d.toISOString().split('T')[0];
+  });
+  const [reportSpins, setReportSpins] = useState(0);
+  const [reportSales, setReportSales] = useState(0);
+  const [reportPizzas, setReportPizzas] = useState(0);
   const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -288,6 +297,51 @@ function App() {
     };
     fetchData();
   }, []);
+
+  // --- Dynamic Reports based on reportDate ---
+  useEffect(() => {
+    let rSales = 0;
+    let rPizzas = 0;
+    const targetDate = new Date(reportDate);
+    targetDate.setHours(0,0,0,0);
+    const nextDate = new Date(targetDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    
+    orders.forEach(order => {
+       if (order.createdAt && order.createdAt.toDate) {
+          const d = order.createdAt.toDate();
+          if (d >= targetDate && d < nextDate) {
+             rSales += order.total || 0;
+             if (order.items) {
+                 rPizzas += order.items.reduce((sum, i) => sum + (i.qty||0), 0);
+             }
+          }
+       }
+    });
+    setReportSales(rSales);
+    setReportPizzas(rPizzas);
+  }, [reportDate, orders]);
+
+  useEffect(() => {
+    const fetchReportSpins = async () => {
+        const targetDate = new Date(reportDate);
+        targetDate.setHours(0,0,0,0);
+        const nextDate = new Date(targetDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        try {
+          const spinsRef = collection(db, "spins");
+          const spinsQuery = query(spinsRef, 
+              where("createdAt", ">=", Timestamp.fromDate(targetDate)), 
+              where("createdAt", "<", Timestamp.fromDate(nextDate))
+          );
+          const spinsSnap = await getDocs(spinsQuery);
+          setReportSpins(spinsSnap.size);
+        } catch(e) {
+          console.warn("Could not fetch report spins", e);
+        }
+    };
+    fetchReportSpins();
+  }, [reportDate]);
 
   // --- Orders Logic ---
   const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter);
@@ -653,19 +707,36 @@ function App() {
                   </div>
                   <div className="stat-icon blue"><BarChart2 size={24} /></div>
                 </div>
-                <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
-                  <div className="stat-info">
-                    <span className="stat-label">Yesterday's Sales (₹)</span>
-                    <span className="stat-value">₹{yesterdaySales}</span>
-                  </div>
-                  <div className="stat-icon orange"><BarChart2 size={24} /></div>
+              </motion.div>
+              
+              {/* Daily Report Selector */}
+              <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ padding: '24px', marginTop: '24px' }}>
+                <div className="section-header" style={{ marginBottom: '20px' }}>
+                  <h2 className="section-title">Date Report</h2>
+                  <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} className="form-input" style={{ width: 'auto' }} />
                 </div>
-                <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
-                  <div className="stat-info">
-                    <span className="stat-label">Yesterday's Pizzas</span>
-                    <span className="stat-value">{yesterdayPizzas}</span>
+                <div className="stats-grid">
+                  <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
+                    <div className="stat-info">
+                      <span className="stat-label">Spins</span>
+                      <span className="stat-value">{reportSpins}</span>
+                    </div>
+                    <div className="stat-icon purple"><Gift size={24} /></div>
                   </div>
-                  <div className="stat-icon yellow"><Pizza size={24} /></div>
+                  <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
+                    <div className="stat-info">
+                      <span className="stat-label">Sales (₹)</span>
+                      <span className="stat-value">₹{reportSales}</span>
+                    </div>
+                    <div className="stat-icon orange"><BarChart2 size={24} /></div>
+                  </div>
+                  <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
+                    <div className="stat-info">
+                      <span className="stat-label">Pizzas Sold</span>
+                      <span className="stat-value">{reportPizzas}</span>
+                    </div>
+                    <div className="stat-icon yellow"><Pizza size={24} /></div>
+                  </div>
                 </div>
               </motion.div>
 
