@@ -90,6 +90,12 @@ const Receipt = ({ order }) => {
               <span>Subtotal</span>
               <span>₹{subtotal}</span>
             </div>
+            {order.offerName && (
+              <div className="total-row" style={{ color: '#d9534f' }}>
+                <span>Discount ({order.offerName})</span>
+                <span>- ₹{subtotal - order.total}</span>
+              </div>
+            )}
             <div className="total-row">
               <span>Delivery Charge</span>
               <span>₹{deliveryCharge}</span>
