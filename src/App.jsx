@@ -62,6 +62,11 @@ function App() {
   const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  // Auth State
+  const [authRole, setAuthRole] = useState(localStorage.getItem('zukas_role') || null);
+  const [pinInput, setPinInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
   // Data States
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [offers, setOffers] = useState([]);
@@ -701,6 +706,51 @@ function App() {
     setIsReviewModalOpen(true);
   };
 
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (pinInput === '1234' || pinInput === '8543') { // Owner
+      localStorage.setItem('zukas_role', 'owner');
+      setAuthRole('owner');
+    } else if (pinInput === '5678') { // Delivery
+      localStorage.setItem('zukas_role', 'delivery');
+      setAuthRole('delivery');
+    } else {
+      setAuthError('Incorrect PIN');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('zukas_role');
+    setAuthRole(null);
+    setPinInput('');
+  };
+
+  if (!authRole) {
+    return (
+      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '20px' }}>
+        <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', maxWidth: '400px', padding: '40px 30px', textAlign: 'center' }}>
+          <img src="/favicon.jpg" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '50%', marginBottom: '20px', border: '3px solid var(--accent-primary)' }} />
+          <h2 style={{ marginBottom: '10px', fontSize: '24px', fontWeight: 'bold' }}>Zuka's Kitchen</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '30px' }}>Enter your PIN to access the dashboard</p>
+          
+          <form onSubmit={handleLogin}>
+            <input 
+              type="password" 
+              className="form-input" 
+              placeholder="Enter PIN" 
+              value={pinInput} 
+              onChange={e => { setPinInput(e.target.value); setAuthError(''); }}
+              style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '20px', marginBottom: '15px' }}
+              autoFocus
+            />
+            {authError && <p style={{ color: 'var(--danger)', fontSize: '14px', marginBottom: '15px' }}>{authError}</p>}
+            <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>Login</button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <Receipt order={printOrder} />
@@ -727,14 +777,21 @@ function App() {
           <div className={`nav-item ${activeTab === 'offers' ? 'active' : ''}`} onClick={() => { setActiveTab('offers'); setIsSidebarOpen(false); }}>
             <Ticket size={20} /><span>Spinner Offers</span>
           </div>
-          <div className={`nav-item ${activeTab === 'locations' ? 'active' : ''}`} onClick={() => { setActiveTab('locations'); setIsSidebarOpen(false); }}>
-            <MapPin size={20} /><span>Locations (Villages)</span>
-          </div>
-          <div className={`nav-item ${activeTab === 'expenses' ? 'active' : ''}`} onClick={() => { setActiveTab('expenses'); setIsSidebarOpen(false); }}>
-            <BarChart2 size={20} /><span>Expenses</span>
-          </div>
-          <div className="nav-item" onClick={() => alert("Feature coming soon")}>
-            <Users size={20} /><span>Customers</span>
+          {authRole === 'owner' && (
+            <>
+              <div className={`nav-item ${activeTab === 'locations' ? 'active' : ''}`} onClick={() => { setActiveTab('locations'); setIsSidebarOpen(false); }}>
+                <MapPin size={20} /><span>Locations (Villages)</span>
+              </div>
+              <div className={`nav-item ${activeTab === 'expenses' ? 'active' : ''}`} onClick={() => { setActiveTab('expenses'); setIsSidebarOpen(false); }}>
+                <BarChart2 size={20} /><span>Expenses</span>
+              </div>
+              <div className="nav-item" onClick={() => alert("Feature coming soon")}>
+                <Users size={20} /><span>Customers</span>
+              </div>
+            </>
+          )}
+          <div className="nav-item danger" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)' }} onClick={handleLogout}>
+            <Users size={20} /><span>Logout</span>
           </div>
         </nav>
       </aside>
@@ -810,9 +867,23 @@ function App() {
                   <div className="stat-icon blue"><BarChart2 size={24} /></div>
                 </div>
               </motion.div>
+
+              {/* Delivery Stats Grid - Only show for delivery */}
+              {authRole === 'delivery' && (
+                <motion.div className="stats-grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '24px' }}>
+                  <div className="glass-panel stat-card">
+                    <div className="stat-info">
+                      <span className="stat-label">To Deliver</span>
+                      <span className="stat-value">{orders.filter(o => o.status === 'ready').length}</span>
+                    </div>
+                    <div className="stat-icon orange"><Pizza size={24} /></div>
+                  </div>
+                </motion.div>
+              )}
               
-              {/* Daily Report Selector */}
-              <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ padding: '24px', marginTop: '24px' }}>
+              {/* Daily Report Selector - Only show for owner */}
+              {authRole === 'owner' && (
+                <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ padding: '24px', marginTop: '24px' }}>
                 <div className="section-header" style={{ marginBottom: '20px' }}>
                   <h2 className="section-title">Date Report</h2>
                   <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} onClick={(e) => { if(e.target.showPicker) e.target.showPicker(); }} className="form-input" style={{ width: 'auto', cursor: 'pointer' }} />
@@ -869,8 +940,10 @@ function App() {
                   <h2 className="section-title">Recent Orders</h2>
                   <div className="filter-group">
                     <button className={`filter-btn ${orderFilter === 'all' ? 'active' : ''}`} onClick={() => setOrderFilter('all')}>All</button>
-                    <button className={`filter-btn ${orderFilter === 'new' ? 'active' : ''}`} onClick={() => setOrderFilter('new')}>New</button>
-                    <button className={`filter-btn ${orderFilter === 'preparing' ? 'active' : ''}`} onClick={() => setOrderFilter('preparing')}>Preparing</button>
+                    {authRole === 'owner' && <button className={`filter-btn ${orderFilter === 'new' ? 'active' : ''}`} onClick={() => setOrderFilter('new')}>New</button>}
+                    {authRole === 'owner' && <button className={`filter-btn ${orderFilter === 'preparing' ? 'active' : ''}`} onClick={() => setOrderFilter('preparing')}>Preparing</button>}
+                    <button className={`filter-btn ${orderFilter === 'ready' ? 'active' : ''}`} onClick={() => setOrderFilter('ready')}>Ready for Delivery</button>
+                    <button className={`filter-btn ${orderFilter === 'delivered' ? 'active' : ''}`} onClick={() => setOrderFilter('delivered')}>Delivered</button>
                   </div>
                 </div>
 
@@ -917,7 +990,7 @@ function App() {
                                     <div key={i} className="order-item"><span className="item-qty">{item.qty}x</span><span>{item.name}</span></div>
                                   ))}
                                   {order.offerName && <div style={{ fontSize: '12px', color: 'var(--accent-primary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Gift size={12} /> {order.offerName}</div>}
-                                  <div style={{ marginTop: '4px', fontWeight: 600, color: 'var(--success)' }}>Total: ₹ {order.total}</div>
+                                  {authRole === 'owner' && <div style={{ marginTop: '4px', fontWeight: 600, color: 'var(--success)' }}>Total: ₹ {order.total}</div>}
                                 </div>
                               </td>
                               <td>
@@ -934,10 +1007,20 @@ function App() {
                               </td>
                               <td>
                                 <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
-                                  <button className="btn-icon" title="Print Receipt" onClick={() => setPrintOrder(order)}><Printer size={16} /></button>
-                                  {order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
-                                  {order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
-                                  <button className="btn-icon" title="More options"><MoreVertical size={16} /></button>
+                                  <button className="btn-icon" title="Share Receipt" onClick={() => setPrintOrder(order)}><Printer size={16} /></button>
+                                  {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
+                                  {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
+                                  {authRole === 'delivery' && order.status === 'ready' && (
+                                    <button className="btn-icon success" title="Mark as Delivered" onClick={async () => {
+                                      try {
+                                        await updateDoc(doc(db, "orders", order.id), { status: 'delivered' });
+                                        setOrders(orders.map(o => o.id === order.id ? { ...o, status: 'delivered' } : o));
+                                      } catch(e) { console.error(e); }
+                                    }} style={{ background: 'var(--success)', color: 'white' }}>
+                                      <CheckCircle2 size={16} /> Delivered
+                                    </button>
+                                  )}
+                                  {authRole === 'owner' && <button className="btn-icon" title="More options"><MoreVertical size={16} /></button>}
                                 </div>
                               </td>
                             </motion.tr>
