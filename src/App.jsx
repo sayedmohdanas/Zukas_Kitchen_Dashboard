@@ -1233,8 +1233,6 @@ function App() {
                     <select className="form-input" value={newOrder.paymentMethod} onChange={e => setNewOrder({...newOrder, paymentMethod: e.target.value})}>
                       <option value="Cash">Cash</option>
                       <option value="UPI">UPI</option>
-                      <option value="Card">Card</option>
-                      <option value="Purnaa Bakaya">Purnaa Bakaya</option>
                     </select>
                   </div>
                   <div className="form-group">
