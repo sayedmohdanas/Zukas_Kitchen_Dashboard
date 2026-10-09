@@ -117,10 +117,6 @@ const Receipt = ({ order }) => {
 
         {/* Footer */}
         <div className="receipt-footer">
-          <p className="thank-you-text">Thank You for Choosing</p>
-          <h2 className="receipt-title small">ZUKAS KITCHEN</h2>
-          <div className="heart-icon">♥</div>
-          
           <div className="enjoy-badge">Enjoy your food, don't forget to review!</div>
           
           <p className="referral-text">
