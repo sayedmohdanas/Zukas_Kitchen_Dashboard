@@ -467,6 +467,22 @@ function App() {
       setOrders(orders.map(o => o.id === id ? { ...o, status: 'preparing' } : o));
     } catch(e) { console.error(e); }
   };
+  const markAsDelivered = async (id) => {
+    try {
+      await updateDoc(doc(db, "orders", id), { status: 'delivered' });
+      setOrders(orders.map(o => o.id === id ? { ...o, status: 'delivered' } : o));
+    } catch(e) { console.error(e); }
+  };
+
+  const handleDeleteOrder = async (id) => {
+    if (window.confirm("Are you sure you want to permanently delete this order?")) {
+      try {
+        await deleteDoc(doc(db, "orders", id));
+        setOrders(orders.filter(o => o.id !== id));
+      } catch(e) { console.error(e); }
+    }
+  };
+
   const markAsReady = async (id) => {
     try {
       await updateDoc(doc(db, "orders", id), { status: 'ready' });
@@ -1028,17 +1044,16 @@ function App() {
                                   <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)}><Printer size={16} /></button>
                                   {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
-                                  {authRole === 'delivery' && order.status === 'ready' && (
-                                    <button className="btn-icon success" title="Mark as Delivered" onClick={async () => {
-                                      try {
-                                        await updateDoc(doc(db, "orders", order.id), { status: 'delivered' });
-                                        setOrders(orders.map(o => o.id === order.id ? { ...o, status: 'delivered' } : o));
-                                      } catch(e) { console.error(e); }
-                                    }} style={{ background: 'var(--success)', color: 'white' }}>
+                                  {(authRole === 'delivery' || authRole === 'owner') && order.status === 'ready' && (
+                                    <button className="btn-icon success" title="Mark as Delivered" onClick={() => markAsDelivered(order.id)} style={{ background: 'var(--success)', color: 'white' }}>
                                       <CheckCircle2 size={16} />
                                     </button>
                                   )}
-                                  {authRole === 'owner' && <button className="btn-icon" title="More options"><MoreVertical size={16} /></button>}
+                                  {authRole === 'owner' && (
+                                    <button className="btn-icon danger" title="Delete Order" onClick={() => handleDeleteOrder(order.id)}>
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </motion.tr>
