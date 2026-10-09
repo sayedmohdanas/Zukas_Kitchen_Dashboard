@@ -74,6 +74,7 @@ function App() {
   const [expenses, setExpenses] = useState([]);
   const [orderFilter, setOrderFilter] = useState('all');
   const [printOrder, setPrintOrder] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(null);
   const [editingPaymentOrder, setEditingPaymentOrder] = useState(null);
   
   // Order Modal State
@@ -372,16 +373,17 @@ function App() {
   }, [reportDate, orders, expenses]);
 
   const handleShareReceipt = async (order) => {
+    setIsPrinting(order.id);
     setPrintOrder(order);
     // Wait for React to render the receipt offscreen
     await new Promise(resolve => setTimeout(resolve, 50));
     
     try {
       const element = document.getElementById('receipt-capture-area');
-      if (!element) return;
+      if (!element) throw new Error("Element not found");
       
       const canvas = await html2canvas(element, { 
-        scale: 2, 
+        scale: 1.2, 
         backgroundColor: '#fdfaf3',
         width: 600,
         windowWidth: 600,
@@ -432,10 +434,12 @@ function App() {
         // Do not alert if the user simply cancelled the share
       } finally {
         setPrintOrder(null);
+        setIsPrinting(null);
       }
     } catch(e) {
       console.error("html2canvas error", e);
       setPrintOrder(null);
+      setIsPrinting(null);
     }
   };
 
@@ -1058,7 +1062,9 @@ function App() {
                               </td>
                               <td>
                                 <div className="action-buttons" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                  <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)}><Printer size={16} /></button>
+                                  <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)} disabled={isPrinting === order.id} style={{ opacity: isPrinting === order.id ? 0.5 : 1 }}>
+                                    {isPrinting === order.id ? <div className="spinner" style={{ width: '16px', height: '16px', border: '2px solid transparent', borderTopColor: 'currentColor', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> : <Printer size={16} />}
+                                  </button>
                                   {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
                                   {((authRole === 'delivery' || authRole === 'owner') && order.status !== 'delivered') && (
