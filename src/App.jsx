@@ -373,7 +373,7 @@ function App() {
   const handleShareReceipt = async (order) => {
     setPrintOrder(order);
     // Wait for React to render the receipt offscreen
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 50));
     
     try {
       const element = document.getElementById('receipt-capture-area');
@@ -1035,7 +1035,7 @@ function App() {
                                         setOrders(orders.map(o => o.id === order.id ? { ...o, status: 'delivered' } : o));
                                       } catch(e) { console.error(e); }
                                     }} style={{ background: 'var(--success)', color: 'white' }}>
-                                      <CheckCircle2 size={16} /> Delivered
+                                      <CheckCircle2 size={16} />
                                     </button>
                                   )}
                                   {authRole === 'owner' && <button className="btn-icon" title="More options"><MoreVertical size={16} /></button>}
