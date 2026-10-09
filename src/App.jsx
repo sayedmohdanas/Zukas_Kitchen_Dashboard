@@ -713,7 +713,7 @@ function App() {
               <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} style={{ padding: '24px', marginTop: '24px' }}>
                 <div className="section-header" style={{ marginBottom: '20px' }}>
                   <h2 className="section-title">Date Report</h2>
-                  <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} className="form-input" style={{ width: 'auto' }} />
+                  <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} onClick={(e) => { if(e.target.showPicker) e.target.showPicker(); }} className="form-input" style={{ width: 'auto', cursor: 'pointer' }} />
                 </div>
                 <div className="stats-grid">
                   <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
