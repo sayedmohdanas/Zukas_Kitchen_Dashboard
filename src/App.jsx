@@ -370,59 +370,60 @@ function App() {
     setReportExpenses(rExpenses);
   }, [reportDate, orders, expenses]);
 
-  useEffect(() => {
-    if (printOrder) {
-      setTimeout(async () => {
-        try {
-          const element = document.getElementById('receipt-capture-area');
-          if (!element) return;
+  const handleShareReceipt = async (order) => {
+    setPrintOrder(order);
+    // Wait for React to render the receipt offscreen
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    try {
+      const element = document.getElementById('receipt-capture-area');
+      if (!element) return;
+      
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#fdfaf3' });
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+      
+      if (!blob) return;
+      const file = new File([blob], `Receipt-${order.id}.jpg`, { type: 'image/jpeg' });
+      
+      // Format WhatsApp text
+      let phone = order.phone || '';
+      if (phone.startsWith('0')) phone = '+91' + phone.substring(1);
+      if (!phone.startsWith('+')) phone = '+91' + phone;
+      phone = phone.replace(/[^0-9]/g, ''); // leave only numbers
+      
+      const message = `Here is your bill from Zukas Kitchen! ♥`;
+      
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'Zukas Kitchen Receipt',
+            text: message,
+            files: [file]
+          });
+        } else {
+          // Fallback: Download image and open WhatsApp web
+          const link = document.createElement('a');
+          link.download = `Receipt-${order.id}.jpg`;
+          link.href = URL.createObjectURL(blob);
+          link.click();
           
-          const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#fdfaf3' });
-          canvas.toBlob(async (blob) => {
-            if (!blob) return;
-            const file = new File([blob], `Receipt-${printOrder.id}.jpg`, { type: 'image/jpeg' });
-            
-            // Format WhatsApp text
-            let phone = printOrder.phone || '';
-            if (phone.startsWith('0')) phone = '+91' + phone.substring(1);
-            if (!phone.startsWith('+')) phone = '+91' + phone;
-            phone = phone.replace(/[^0-9]/g, ''); // leave only numbers
-            
-            const message = `Here is your bill from Zukas Kitchen! ♥`;
-            
-            try {
-              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                  title: 'Zukas Kitchen Receipt',
-                  text: message,
-                  files: [file]
-                });
-              } else {
-                // Fallback: Download image and open WhatsApp web
-                const link = document.createElement('a');
-                link.download = `Receipt-${printOrder.id}.jpg`;
-                link.href = URL.createObjectURL(blob);
-                link.click();
-                
-                if (phone && phone.length > 9) {
-                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-                } else {
-                  alert("Receipt downloaded. You can now send it to the customer manually.");
-                }
-              }
-            } catch (shareErr) {
-              console.error("Error sharing", shareErr);
-            } finally {
-              setPrintOrder(null);
-            }
-          }, 'image/jpeg', 0.9);
-        } catch(e) {
-           console.error("html2canvas error", e);
-           setPrintOrder(null);
+          if (phone && phone.length > 9) {
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+          } else {
+            alert("Receipt downloaded. You can now send it to the customer manually.");
+          }
         }
-      }, 500); // Wait for render
+      } catch (shareErr) {
+        console.error("Error sharing", shareErr);
+        // Do not alert if the user simply cancelled the share
+      } finally {
+        setPrintOrder(null);
+      }
+    } catch(e) {
+      console.error("html2canvas error", e);
+      setPrintOrder(null);
     }
-  }, [printOrder]);
+  };
 
   useEffect(() => {
     const fetchReportSpins = async () => {
@@ -1011,7 +1012,7 @@ function App() {
                               </td>
                               <td>
                                 <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
-                                  <button className="btn-icon" title="Share Receipt" onClick={() => setPrintOrder(order)}><Printer size={16} /></button>
+                                  <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)}><Printer size={16} /></button>
                                   {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
                                   {authRole === 'delivery' && order.status === 'ready' && (
