@@ -57,6 +57,7 @@ function App() {
   const [reportSpins, setReportSpins] = useState(0);
   const [reportSales, setReportSales] = useState(0);
   const [reportPizzas, setReportPizzas] = useState(0);
+  const [reportExpenses, setReportExpenses] = useState(0);
   const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -64,6 +65,7 @@ function App() {
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [offers, setOffers] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [orderFilter, setOrderFilter] = useState('all');
   
   // Order Modal State
@@ -83,6 +85,10 @@ function App() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
   const [reviewForm, setReviewForm] = useState({ customerName: '', rating: 5, village: '', text: '' });
+
+  // Expense State
+  const [newExpenseName, setNewExpenseName] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
 
   // --- Fetch Data on Mount ---
   useEffect(() => {
@@ -213,6 +219,24 @@ function App() {
         } catch (e) {
           console.warn("Could not fetch orders. Make sure rules are updated.", e);
         }
+        
+        // Fetch Expenses
+        try {
+          const expensesRef = collection(db, "expenses");
+          const expensesSnap = await getDocs(expensesRef);
+          const fetchedExpenses = [];
+          expensesSnap.forEach(doc => {
+            fetchedExpenses.push({ id: doc.id, ...doc.data() });
+          });
+          fetchedExpenses.sort((a,b) => {
+             const tA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+             const tB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+             return tB - tA;
+          });
+          setExpenses(fetchedExpenses);
+        } catch (e) {
+          console.warn("Could not fetch expenses. Make sure rules are updated.", e);
+        }
 
         setOffers(fetchedOffers);
 
@@ -302,6 +326,8 @@ function App() {
   useEffect(() => {
     let rSales = 0;
     let rPizzas = 0;
+    let rExpenses = 0;
+    
     const targetDate = new Date(reportDate);
     targetDate.setHours(0,0,0,0);
     const nextDate = new Date(targetDate);
@@ -318,9 +344,20 @@ function App() {
           }
        }
     });
+    
+    expenses.forEach(exp => {
+       if (exp.createdAt && exp.createdAt.toDate) {
+          const d = exp.createdAt.toDate();
+          if (d >= targetDate && d < nextDate) {
+             rExpenses += exp.amount || 0;
+          }
+       }
+    });
+    
     setReportSales(rSales);
     setReportPizzas(rPizzas);
-  }, [reportDate, orders]);
+    setReportExpenses(rExpenses);
+  }, [reportDate, orders, expenses]);
 
   useEffect(() => {
     const fetchReportSpins = async () => {
@@ -632,6 +669,9 @@ function App() {
           <div className={`nav-item ${activeTab === 'locations' ? 'active' : ''}`} onClick={() => { setActiveTab('locations'); setIsSidebarOpen(false); }}>
             <MapPin size={20} /><span>Locations (Villages)</span>
           </div>
+          <div className={`nav-item ${activeTab === 'expenses' ? 'active' : ''}`} onClick={() => { setActiveTab('expenses'); setIsSidebarOpen(false); }}>
+            <BarChart2 size={20} /><span>Expenses</span>
+          </div>
           <div className="nav-item" onClick={() => alert("Feature coming soon")}>
             <Users size={20} /><span>Customers</span>
           </div>
@@ -646,6 +686,7 @@ function App() {
               {activeTab === 'dashboard' && 'Live Dashboard'}
               {activeTab === 'reviews' && 'Customer Reviews'}
               {activeTab === 'offers' && 'Spinner & Wheel Offers'}
+              {activeTab === 'expenses' && 'Daily Expenses'}
             </h1>
           </div>
           <div className="header-actions">
@@ -736,6 +777,20 @@ function App() {
                       <span className="stat-value">{reportPizzas}</span>
                     </div>
                     <div className="stat-icon yellow"><Pizza size={24} /></div>
+                  </div>
+                  <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,50,50,0.3)' }}>
+                    <div className="stat-info">
+                      <span className="stat-label">Expenses (₹)</span>
+                      <span className="stat-value">₹{reportExpenses}</span>
+                    </div>
+                    <div className="stat-icon orange"><BarChart2 size={24} /></div>
+                  </div>
+                  <div className="glass-panel stat-card" style={{ border: '1px solid rgba(34,197,94,0.3)' }}>
+                    <div className="stat-info">
+                      <span className="stat-label">Profit (₹)</span>
+                      <span className="stat-value">₹{reportSales - reportExpenses}</span>
+                    </div>
+                    <div className="stat-icon green"><BarChart2 size={24} /></div>
                   </div>
                 </div>
               </motion.div>
@@ -988,6 +1043,77 @@ function App() {
                             </td>
                           </motion.tr>
                         ))
+                      )}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Expenses Tab */}
+          {activeTab === 'expenses' && (
+            <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '24px' }}>
+              <div className="section-header">
+                <h2 className="section-title">Add Daily Expense</h2>
+              </div>
+              
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if(!newExpenseName || !newExpenseAmount) return;
+                try {
+                  const docRef = await addDoc(collection(db, "expenses"), {
+                    name: newExpenseName,
+                    amount: Number(newExpenseAmount),
+                    createdAt: serverTimestamp()
+                  });
+                  setExpenses([{ id: docRef.id, name: newExpenseName, amount: Number(newExpenseAmount), createdAt: { toDate: () => new Date() } }, ...expenses]);
+                  setNewExpenseName('');
+                  setNewExpenseAmount('');
+                } catch(err) {
+                  alert("Failed to add expense");
+                }
+              }} style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                <input type="text" className="form-input" placeholder="Expense description..." value={newExpenseName} onChange={e => setNewExpenseName(e.target.value)} required style={{ flex: 2, minWidth: '200px' }} />
+                <input type="number" className="form-input" placeholder="Amount (₹)" value={newExpenseAmount} onChange={e => setNewExpenseAmount(e.target.value)} required style={{ flex: 1, minWidth: '100px' }} />
+                <button type="submit" className="btn-primary" style={{ flexShrink: 0 }}>Add Expense</button>
+              </form>
+
+              <div className="orders-table-wrapper">
+                <table className="orders-table font-inter">
+                  <thead>
+                    <tr>
+                      <th>Expense Date</th>
+                      <th>Description</th>
+                      <th>Amount</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence>
+                      {expenses.map((exp) => (
+                        <motion.tr key={exp.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <td style={{ color: 'var(--text-secondary)' }}>
+                            {exp.createdAt && exp.createdAt.toDate ? exp.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Just now"}
+                          </td>
+                          <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{exp.name}</td>
+                          <td style={{ color: 'var(--danger)', fontWeight: 600 }}>₹{exp.amount}</td>
+                          <td>
+                            <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                              <button className="btn-icon danger" onClick={async () => {
+                                if(window.confirm('Delete this expense?')) {
+                                  try {
+                                    await deleteDoc(doc(db, "expenses", exp.id));
+                                    setExpenses(expenses.filter(e => e.id !== exp.id));
+                                  } catch(e) { alert("Failed to delete"); }
+                                }
+                              }} title="Delete Expense"><Trash2 size={16} /></button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                      {expenses.length === 0 && (
+                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>No expenses found.</td></tr>
                       )}
                     </AnimatePresence>
                   </tbody>
