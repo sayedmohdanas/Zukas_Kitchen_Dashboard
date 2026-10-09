@@ -46,6 +46,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [villages, setVillages] = useState([]);
   const [dailySpins, setDailySpins] = useState(0);
+  const [yesterdaySales, setYesterdaySales] = useState(0);
+  const [yesterdayPizzas, setYesterdayPizzas] = useState(0);
   const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -161,6 +163,48 @@ function App() {
           console.warn("Could not fetch spins:", e);
         }
 
+        // Fetch Orders
+        try {
+          const ordersRef = collection(db, "orders");
+          const ordersSnap = await getDocs(ordersRef);
+          const fetchedOrders = [];
+          
+          let ySales = 0;
+          let yPizzas = 0;
+          
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          ordersSnap.forEach(doc => {
+            const data = doc.data();
+            fetchedOrders.push({ id: doc.id, ...data });
+            
+            // Calculate yesterday's stats
+            if (data.createdAt && data.createdAt.toDate) {
+              const orderDate = data.createdAt.toDate();
+              if (orderDate >= yesterday && orderDate < today) {
+                ySales += data.total || 0;
+                if (data.items) {
+                   yPizzas += data.items.reduce((sum, item) => sum + (item.qty || 0), 0);
+                }
+              }
+            }
+          });
+          
+          // Sort descending by orderTime or createdAt
+          fetchedOrders.sort((a,b) => {
+             const tA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+             const tB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+             return tB - tA;
+          });
+          
+          setOrders(fetchedOrders);
+          setYesterdaySales(ySales);
+          setYesterdayPizzas(yPizzas);
+        } catch (e) {
+          console.warn("Could not fetch orders. Make sure rules are updated.", e);
+        }
+
         setOffers(fetchedOffers);
 
         // --- ONE-TIME RESET SCRIPT ---
@@ -247,8 +291,18 @@ function App() {
 
   // --- Orders Logic ---
   const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter);
-  const markAsPreparing = (id) => setOrders(orders.map(o => o.id === id ? { ...o, status: 'preparing' } : o));
-  const markAsReady = (id) => setOrders(orders.map(o => o.id === id ? { ...o, status: 'ready' } : o));
+  const markAsPreparing = async (id) => {
+    try {
+      await updateDoc(doc(db, "orders", id), { status: 'preparing' });
+      setOrders(orders.map(o => o.id === id ? { ...o, status: 'preparing' } : o));
+    } catch(e) { console.error(e); }
+  };
+  const markAsReady = async (id) => {
+    try {
+      await updateDoc(doc(db, "orders", id), { status: 'ready' });
+      setOrders(orders.map(o => o.id === id ? { ...o, status: 'ready' } : o));
+    } catch(e) { console.error(e); }
+  };
 
   const getStatusIcon = (status) => {
     switch(status) {
@@ -331,7 +385,7 @@ function App() {
     return Math.max(0, subtotal - discount);
   };
 
-  const handleSubmitOrder = (e) => {
+  const handleSubmitOrder = async (e) => {
     e.preventDefault();
     const now = new Date();
     const orderTimeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -348,17 +402,31 @@ function App() {
 
     const orderToAdd = {
       ...newOrder,
-      id: `ORD-${(orders.length + 1).toString().padStart(3, '0')}`,
-      total: calculateTotal(), status: 'new', orderTime: orderTimeString, deliveryTime: deliveryTimeString, offerName: finalOfferName
+      id: `ORD-${(orders.length + 1).toString().padStart(3, '0')}-${Math.floor(Math.random()*1000)}`,
+      total: calculateTotal(), 
+      status: 'new', 
+      orderTime: orderTimeString, 
+      deliveryTime: deliveryTimeString, 
+      offerName: finalOfferName,
+      createdAt: serverTimestamp()
     };
     orderToAdd.items = orderToAdd.items.filter(i => i.name.trim() !== '');
 
     if (orderToAdd.items.length === 0) return alert('Please select at least one item');
     if (!orderToAdd.customerName) return alert('Please add customer name');
 
-    setOrders([orderToAdd, ...orders]);
-    setIsOrderModalOpen(false);
-    setNewOrder({ customerName: '', phone: '', village: '', source: 'call', offerId: 'none', customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto', customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }] });
+    try {
+      await setDoc(doc(db, "orders", orderToAdd.id), orderToAdd);
+      
+      // Update local state by pretending serverTimestamp is now
+      const localOrder = { ...orderToAdd, createdAt: { toDate: () => new Date() } };
+      setOrders([localOrder, ...orders]);
+      setIsOrderModalOpen(false);
+      setNewOrder({ customerName: '', phone: '', village: '', source: 'call', offerId: 'none', customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto', customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }] });
+    } catch(err) {
+      console.error("Error saving order:", err);
+      alert("Failed to save order to Firebase");
+    }
   };
 
   // --- Offers Logic (Firebase connected) ---
@@ -584,6 +652,20 @@ function App() {
                     <span className="stat-value">₹{orders.reduce((sum, o) => sum + o.total, 0)}</span>
                   </div>
                   <div className="stat-icon blue"><BarChart2 size={24} /></div>
+                </div>
+                <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
+                  <div className="stat-info">
+                    <span className="stat-label">Yesterday's Sales (₹)</span>
+                    <span className="stat-value">₹{yesterdaySales}</span>
+                  </div>
+                  <div className="stat-icon orange"><BarChart2 size={24} /></div>
+                </div>
+                <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
+                  <div className="stat-info">
+                    <span className="stat-label">Yesterday's Pizzas</span>
+                    <span className="stat-value">{yesterdayPizzas}</span>
+                  </div>
+                  <div className="stat-icon yellow"><Pizza size={24} /></div>
                 </div>
               </motion.div>
 
