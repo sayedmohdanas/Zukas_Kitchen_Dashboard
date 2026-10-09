@@ -53,7 +53,7 @@ const Receipt = ({ order }) => {
             <div className="info-row"><strong>Phone:</strong> {order.phone}</div>
             <div className="info-row" style={{ alignItems: 'flex-start' }}>
               <strong>Address:</strong> 
-              <span style={{ marginLeft: '6px', lineHeight: '1.2' }}>{order.village}<br/>{order.addressDetails || 'Near masjid'}</span>
+              <span style={{ marginLeft: '6px', lineHeight: '1.2' }}>{order.village}{order.address && <><br/>{order.address}</>}</span>
             </div>
           </div>
         </div>

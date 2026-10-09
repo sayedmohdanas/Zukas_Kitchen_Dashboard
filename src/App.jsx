@@ -78,7 +78,7 @@ function App() {
   // Order Modal State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [newOrder, setNewOrder] = useState({
-    customerName: '', phone: '', village: '', source: 'call', offerId: 'none',
+    customerName: '', phone: '', village: '', address: '', source: 'call', offerId: 'none',
     customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto',
     customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }],
     paymentMethod: 'Cash', paymentStatus: 'UNPAID'
@@ -578,7 +578,7 @@ function App() {
       const localOrder = { ...orderToAdd, createdAt: { toDate: () => new Date() } };
       setOrders([localOrder, ...orders]);
       setIsOrderModalOpen(false);
-      setNewOrder({ customerName: '', phone: '', village: '', source: 'call', offerId: 'none', customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto', customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }], paymentMethod: 'Cash', paymentStatus: 'UNPAID' });
+      setNewOrder({ customerName: '', phone: '', village: '', address: '', source: 'call', offerId: 'none', customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto', customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }], paymentMethod: 'Cash', paymentStatus: 'UNPAID' });
     } catch(err) {
       console.error("Error saving order:", err);
       alert("Failed to save order to Firebase");
@@ -984,6 +984,7 @@ function App() {
                                     <span className="customer-name">{order.customerName}</span>
                                     <a href={`tel:${order.phone.replace(/[^0-9+]/g, '')}`} className="customer-phone" style={{ textDecoration: 'none', color: 'inherit' }}>{order.phone}</a>
                                     {order.village && <span style={{ fontSize: '12px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={10} /> {order.village}</span>}
+                                    {order.address && <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{order.address}</span>}
                                   </div>
                                 </div>
                               </td>
@@ -1330,7 +1331,14 @@ function App() {
                     <input list="villages" className="form-input" placeholder="Select or type village..." value={newOrder.village} onChange={e => setNewOrder({ ...newOrder, village: e.target.value })} />
                     <datalist id="villages">{villages.map(v => <option key={v.id} value={v.name} />)}</datalist>
                   </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Address (Optional)</label>
+                    <input type="text" className="form-input" placeholder="House no, Landmark, etc..." value={newOrder.address} onChange={e => setNewOrder({ ...newOrder, address: e.target.value })} />
+                  </div>
+                </div>
 
+                <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Delivery Time</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
