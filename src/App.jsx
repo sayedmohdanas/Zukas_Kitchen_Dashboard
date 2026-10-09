@@ -1024,7 +1024,7 @@ function App() {
                                 </div>
                               </td>
                               <td>
-                                <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                                <div className="action-buttons" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                   <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)}><Printer size={16} /></button>
                                   {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
