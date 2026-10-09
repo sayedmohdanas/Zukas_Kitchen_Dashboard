@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Pizza, Users, Bell, CheckCircle2, Clock, 
   ChefHat, MoreVertical, Plus, X, Phone, MessageCircle, 
-  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2, Printer
+  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2, Printer, IndianRupee
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from './firebase/firebase.js';
@@ -74,6 +74,7 @@ function App() {
   const [expenses, setExpenses] = useState([]);
   const [orderFilter, setOrderFilter] = useState('all');
   const [printOrder, setPrintOrder] = useState(null);
+  const [editingPaymentOrder, setEditingPaymentOrder] = useState(null);
   
   // Order Modal State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -481,6 +482,22 @@ function App() {
         setOrders(orders.filter(o => o.id !== id));
       } catch(e) { console.error(e); }
     }
+  };
+
+  const handleSavePaymentUpdate = async () => {
+    if (!editingPaymentOrder) return;
+    try {
+      await updateDoc(doc(db, "orders", editingPaymentOrder.id), { 
+        paymentMethod: editingPaymentOrder.paymentMethod,
+        paymentStatus: editingPaymentOrder.paymentStatus
+      });
+      setOrders(orders.map(o => o.id === editingPaymentOrder.id ? { 
+        ...o, 
+        paymentMethod: editingPaymentOrder.paymentMethod,
+        paymentStatus: editingPaymentOrder.paymentStatus
+      } : o));
+      setEditingPaymentOrder(null);
+    } catch(e) { console.error(e); }
   };
 
   const markAsReady = async (id) => {
@@ -1050,6 +1067,11 @@ function App() {
                                     </button>
                                   )}
                                   {authRole === 'owner' && (
+                                    <button className="btn-icon" title="Update Payment" onClick={() => setEditingPaymentOrder(order)}>
+                                      <IndianRupee size={16} />
+                                    </button>
+                                  )}
+                                  {authRole === 'owner' && (
                                     <button className="btn-icon danger" title="Delete Order" onClick={() => handleDeleteOrder(order.id)}>
                                       <Trash2 size={16} />
                                     </button>
@@ -1598,6 +1620,38 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Payment Update Modal */}
+      {editingPaymentOrder && (
+        <div className="modal-overlay" onClick={() => setEditingPaymentOrder(null)} style={{ zIndex: 1000 }}>
+          <motion.div className="modal-content" onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Update Payment</h2>
+              <button className="modal-close" onClick={() => setEditingPaymentOrder(null)}><X size={24} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Payment Method</label>
+                <select className="form-input" value={editingPaymentOrder.paymentMethod || 'Cash'} onChange={e => setEditingPaymentOrder({...editingPaymentOrder, paymentMethod: e.target.value})}>
+                  <option value="Cash">Cash</option>
+                  <option value="UPI">UPI</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Payment Status</label>
+                <select className="form-input" value={editingPaymentOrder.paymentStatus || 'UNPAID'} onChange={e => setEditingPaymentOrder({...editingPaymentOrder, paymentStatus: e.target.value})} style={{ borderColor: editingPaymentOrder.paymentStatus === 'PAID' ? 'var(--success)' : 'var(--danger)' }}>
+                  <option value="PAID">PAID</option>
+                  <option value="UNPAID">UNPAID</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setEditingPaymentOrder(null)}>Cancel</button>
+              <button className="btn-primary" style={{ flex: 1, background: 'var(--success)', borderColor: 'var(--success)' }} onClick={handleSavePaymentUpdate}>Save Changes</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
     </div>
   );
