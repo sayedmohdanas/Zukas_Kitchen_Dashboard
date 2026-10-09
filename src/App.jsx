@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Pizza, Users, Bell, CheckCircle2, Clock, 
   ChefHat, MoreVertical, Plus, X, Phone, MessageCircle, 
-  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2
+  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from './firebase/firebase.js';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import localPrizes from './data/prizes.js';
-
+import Receipt from './components/Receipt';
 // Menu Inventory from Zukas Kitchen
 const MENU_ITEMS = [
   { id: 'm-s', name: 'Pizza Margherita (Small)', price: 99 },
@@ -66,6 +66,7 @@ function App() {
   const [reviews, setReviews] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [orderFilter, setOrderFilter] = useState('all');
+  const [printOrder, setPrintOrder] = useState(null);
   
   // Order Modal State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -359,6 +360,15 @@ function App() {
   }, [reportDate, orders, expenses]);
 
   useEffect(() => {
+    if (printOrder) {
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => setPrintOrder(null), 500); // clear after print dialog closes
+      }, 300);
+    }
+  }, [printOrder]);
+
+  useEffect(() => {
     const fetchReportSpins = async () => {
         const targetDate = new Date(reportDate);
         targetDate.setHours(0,0,0,0);
@@ -642,6 +652,7 @@ function App() {
 
   return (
     <div className="app-container">
+      <Receipt order={printOrder} />
       {/* Sidebar Overlay (Mobile) */}
       <div className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`} onClick={() => setIsSidebarOpen(false)} />
 
@@ -865,6 +876,7 @@ function App() {
                               </td>
                               <td>
                                 <div className="action-buttons" style={{ justifyContent: 'flex-end' }}>
+                                  <button className="btn-icon" title="Print Receipt" onClick={() => setPrintOrder(order)}><Printer size={16} /></button>
                                   {order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
                                   <button className="btn-icon" title="More options"><MoreVertical size={16} /></button>
