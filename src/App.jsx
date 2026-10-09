@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Pizza, Users, Bell, CheckCircle2, Clock, 
   ChefHat, MoreVertical, Plus, X, Phone, MessageCircle, 
-  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2, Printer, IndianRupee
+  MapPin, Timer, Gift, Menu, Star, MessageSquare, Ticket, Edit2, Trash2, BarChart2, Printer, IndianRupee, CheckCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from './firebase/firebase.js';
@@ -1061,9 +1061,9 @@ function App() {
                                   <button className="btn-icon" title="Share Receipt" onClick={() => handleShareReceipt(order)}><Printer size={16} /></button>
                                   {authRole === 'owner' && order.status === 'new' && <button className="btn-icon" title="Start Preparing" onClick={() => markAsPreparing(order.id)}><ChefHat size={16} /></button>}
                                   {authRole === 'owner' && order.status === 'preparing' && <button className="btn-icon success" title="Mark as Ready" onClick={() => markAsReady(order.id)}><CheckCircle2 size={16} /></button>}
-                                  {(authRole === 'delivery' || authRole === 'owner') && order.status === 'ready' && (
+                                  {((authRole === 'delivery' && order.status === 'ready') || (authRole === 'owner' && order.status !== 'delivered')) && (
                                     <button className="btn-icon success" title="Mark as Delivered" onClick={() => markAsDelivered(order.id)} style={{ background: 'var(--success)', color: 'white' }}>
-                                      <CheckCircle2 size={16} />
+                                      <CheckCheck size={16} />
                                     </button>
                                   )}
                                   {authRole === 'owner' && (
