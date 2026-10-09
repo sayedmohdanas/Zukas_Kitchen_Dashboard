@@ -933,6 +933,7 @@ function App() {
                   </div>
                 </div>
               </motion.div>
+              )}
 
               {/* Orders Table */}
               <motion.div className="glass-panel" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ padding: '24px' }}>
