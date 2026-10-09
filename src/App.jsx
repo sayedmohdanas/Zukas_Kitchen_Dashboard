@@ -982,7 +982,7 @@ function App() {
                                   <div className="customer-avatar">{order.customerName.charAt(0).toUpperCase()}</div>
                                   <div className="customer-details">
                                     <span className="customer-name">{order.customerName}</span>
-                                    <span className="customer-phone">{order.phone}</span>
+                                    <a href={`tel:${order.phone.replace(/[^0-9+]/g, '')}`} className="customer-phone" style={{ textDecoration: 'none', color: 'inherit' }}>{order.phone}</a>
                                     {order.village && <span style={{ fontSize: '12px', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={10} /> {order.village}</span>}
                                   </div>
                                 </div>
