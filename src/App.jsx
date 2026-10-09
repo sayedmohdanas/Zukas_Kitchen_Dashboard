@@ -57,6 +57,7 @@ function App() {
   const [reportSpins, setReportSpins] = useState(0);
   const [reportSales, setReportSales] = useState(0);
   const [reportPizzas, setReportPizzas] = useState(0);
+  const [reportOrdersCount, setReportOrdersCount] = useState(0);
   const [reportExpenses, setReportExpenses] = useState(0);
   const [newVillageName, setNewVillageName] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -329,6 +330,7 @@ function App() {
     let rSales = 0;
     let rPizzas = 0;
     let rExpenses = 0;
+    let rOrders = 0;
     
     const targetDate = new Date(reportDate);
     targetDate.setHours(0,0,0,0);
@@ -340,6 +342,7 @@ function App() {
           const d = order.createdAt.toDate();
           if (d >= targetDate && d < nextDate) {
              rSales += order.total || 0;
+             rOrders += 1;
              if (order.items) {
                  rPizzas += order.items.reduce((sum, i) => sum + (i.qty||0), 0);
              }
@@ -358,6 +361,7 @@ function App() {
     
     setReportSales(rSales);
     setReportPizzas(rPizzas);
+    setReportOrdersCount(rOrders);
     setReportExpenses(rExpenses);
   }, [reportDate, orders, expenses]);
 
@@ -827,6 +831,13 @@ function App() {
                       <span className="stat-value">₹{reportSales}</span>
                     </div>
                     <div className="stat-icon orange"><BarChart2 size={24} /></div>
+                  </div>
+                  <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
+                    <div className="stat-info">
+                      <span className="stat-label">Total Orders</span>
+                      <span className="stat-value">{reportOrdersCount}</span>
+                    </div>
+                    <div className="stat-icon yellow"><Ticket size={24} /></div>
                   </div>
                   <div className="glass-panel stat-card" style={{ border: '1px solid rgba(255,165,0,0.3)' }}>
                     <div className="stat-info">
