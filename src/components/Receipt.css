@@ -4,8 +4,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  max-width: 800px;
+  width: 600px;
   z-index: -100;
   opacity: 0.01;
   pointer-events: none;
@@ -13,8 +12,7 @@
 
 /* Receipt Container */
 .receipt-container {
-  width: 100%;
-  max-width: 800px;
+  width: 600px;
   margin: 0 auto;
   font-family: 'Inter', sans-serif;
   color: #1a1a1a;

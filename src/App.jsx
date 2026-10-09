@@ -382,6 +382,8 @@ function App() {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         backgroundColor: '#fdfaf3',
+        width: 600,
+        windowWidth: 600,
         onclone: (doc) => {
           const wrapper = doc.querySelector('.receipt-wrapper');
           if (wrapper) wrapper.style.opacity = '1';
