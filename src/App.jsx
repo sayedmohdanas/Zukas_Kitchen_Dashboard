@@ -73,7 +73,8 @@ function App() {
   const [newOrder, setNewOrder] = useState({
     customerName: '', phone: '', village: '', source: 'call', offerId: 'none',
     customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto',
-    customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }]
+    customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }],
+    paymentMethod: 'Cash', paymentStatus: 'UNPAID'
   });
 
   // Offer Modal State
@@ -522,7 +523,7 @@ function App() {
       const localOrder = { ...orderToAdd, createdAt: { toDate: () => new Date() } };
       setOrders([localOrder, ...orders]);
       setIsOrderModalOpen(false);
-      setNewOrder({ customerName: '', phone: '', village: '', source: 'call', offerId: 'none', customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto', customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }] });
+      setNewOrder({ customerName: '', phone: '', village: '', source: 'call', offerId: 'none', customOfferName: '', customOfferAmount: '', deliveryTimeMode: 'auto', customDeliveryTime: '', items: [{ name: '', qty: 1, price: 0 }], paymentMethod: 'Cash', paymentStatus: 'UNPAID' });
     } catch(err) {
       console.error("Error saving order:", err);
       alert("Failed to save order to Firebase");
@@ -1224,6 +1225,25 @@ function App() {
                       </div>
                     </motion.div>
                   )}
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Payment Method</label>
+                    <select className="form-input" value={newOrder.paymentMethod} onChange={e => setNewOrder({...newOrder, paymentMethod: e.target.value})}>
+                      <option value="Cash">Cash</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Card">Card</option>
+                      <option value="Purnaa Bakaya">Purnaa Bakaya</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Payment Status</label>
+                    <select className="form-input" value={newOrder.paymentStatus} onChange={e => setNewOrder({...newOrder, paymentStatus: e.target.value})} style={{ borderColor: newOrder.paymentStatus === 'PAID' ? 'var(--success)' : 'var(--danger)' }}>
+                      <option value="PAID">PAID</option>
+                      <option value="UNPAID">UNPAID</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="form-group">
