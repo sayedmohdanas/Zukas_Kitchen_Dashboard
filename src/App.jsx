@@ -771,14 +771,14 @@ function App() {
           <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}>
             <LayoutDashboard size={20} /><span>Dashboard</span>
           </div>
-          <div className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => { setActiveTab('reviews'); setIsSidebarOpen(false); }}>
-            <MessageSquare size={20} /><span>Reviews</span>
-          </div>
-          <div className={`nav-item ${activeTab === 'offers' ? 'active' : ''}`} onClick={() => { setActiveTab('offers'); setIsSidebarOpen(false); }}>
-            <Ticket size={20} /><span>Spinner Offers</span>
-          </div>
           {authRole === 'owner' && (
             <>
+              <div className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => { setActiveTab('reviews'); setIsSidebarOpen(false); }}>
+                <MessageSquare size={20} /><span>Reviews</span>
+              </div>
+              <div className={`nav-item ${activeTab === 'offers' ? 'active' : ''}`} onClick={() => { setActiveTab('offers'); setIsSidebarOpen(false); }}>
+                <Ticket size={20} /><span>Spinner Offers</span>
+              </div>
               <div className={`nav-item ${activeTab === 'locations' ? 'active' : ''}`} onClick={() => { setActiveTab('locations'); setIsSidebarOpen(false); }}>
                 <MapPin size={20} /><span>Locations (Villages)</span>
               </div>
@@ -808,7 +808,7 @@ function App() {
             </h1>
           </div>
           <div className="header-actions">
-            {activeTab === 'dashboard' && (
+            {activeTab === 'dashboard' && authRole === 'owner' && (
               <button className="btn-primary" onClick={() => setIsOrderModalOpen(true)}>
                 <Plus size={18} /> <span>Add Order</span>
               </button>
@@ -829,44 +829,46 @@ function App() {
         <div className="dashboard-body">
           {activeTab === 'dashboard' && (
             <>
-              {/* Stats Grid */}
-              <motion.div className="stats-grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                <div className="glass-panel stat-card">
-                  <div className="stat-info">
-                    <span className="stat-label">New Orders</span>
-                    <span className="stat-value">{orders.filter(o => o.status === 'new').length}</span>
+              {/* Stats Grid - Only show for owner */}
+              {authRole === 'owner' && (
+                <motion.div className="stats-grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                  <div className="glass-panel stat-card">
+                    <div className="stat-info">
+                      <span className="stat-label">New Orders</span>
+                      <span className="stat-value">{orders.filter(o => o.status === 'new').length}</span>
+                    </div>
+                    <div className="stat-icon orange"><Bell size={24} /></div>
                   </div>
-                  <div className="stat-icon orange"><Bell size={24} /></div>
-                </div>
-                <div className="glass-panel stat-card">
-                  <div className="stat-info">
-                    <span className="stat-label">Preparing</span>
-                    <span className="stat-value">{orders.filter(o => o.status === 'preparing').length}</span>
+                  <div className="glass-panel stat-card">
+                    <div className="stat-info">
+                      <span className="stat-label">Preparing</span>
+                      <span className="stat-value">{orders.filter(o => o.status === 'preparing').length}</span>
+                    </div>
+                    <div className="stat-icon yellow"><ChefHat size={24} /></div>
                   </div>
-                  <div className="stat-icon yellow"><ChefHat size={24} /></div>
-                </div>
-                <div className="glass-panel stat-card">
-                  <div className="stat-info">
-                    <span className="stat-label">Ready</span>
-                    <span className="stat-value">{orders.filter(o => o.status === 'ready').length}</span>
+                  <div className="glass-panel stat-card">
+                    <div className="stat-info">
+                      <span className="stat-label">Ready</span>
+                      <span className="stat-value">{orders.filter(o => o.status === 'ready').length}</span>
+                    </div>
+                    <div className="stat-icon green"><CheckCircle2 size={24} /></div>
                   </div>
-                  <div className="stat-icon green"><CheckCircle2 size={24} /></div>
-                </div>
-                <div className="glass-panel stat-card">
-                  <div className="stat-info">
-                    <span className="stat-label">Today's Spins</span>
-                    <span className="stat-value">{dailySpins}</span>
+                  <div className="glass-panel stat-card">
+                    <div className="stat-info">
+                      <span className="stat-label">Today's Spins</span>
+                      <span className="stat-value">{dailySpins}</span>
+                    </div>
+                    <div className="stat-icon purple"><Gift size={24} /></div>
                   </div>
-                  <div className="stat-icon purple"><Gift size={24} /></div>
-                </div>
-                <div className="glass-panel stat-card">
-                  <div className="stat-info">
-                    <span className="stat-label">Today's Sales</span>
-                    <span className="stat-value">₹{orders.reduce((sum, o) => sum + o.total, 0)}</span>
+                  <div className="glass-panel stat-card">
+                    <div className="stat-info">
+                      <span className="stat-label">Today's Sales</span>
+                      <span className="stat-value">₹{orders.reduce((sum, o) => sum + o.total, 0)}</span>
+                    </div>
+                    <div className="stat-icon blue"><BarChart2 size={24} /></div>
                   </div>
-                  <div className="stat-icon blue"><BarChart2 size={24} /></div>
-                </div>
-              </motion.div>
+                </motion.div>
+              )}
 
               {/* Delivery Stats Grid - Only show for delivery */}
               {authRole === 'delivery' && (
