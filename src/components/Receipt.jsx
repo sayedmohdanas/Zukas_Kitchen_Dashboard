@@ -19,7 +19,8 @@ const Receipt = ({ order }) => {
   const deliveryCharge = 0; // Or from order if available
 
   return (
-    <div className="receipt-container print-only">
+    <div className="receipt-wrapper">
+      <div id="receipt-capture-area" className="receipt-container">
       <div className="receipt-content">
         
         {/* Header Region */}
@@ -132,6 +133,7 @@ const Receipt = ({ order }) => {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

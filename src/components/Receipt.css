@@ -1,26 +1,9 @@
 /* Print Styles */
-@media screen {
-  .print-only {
-    display: none !important;
-  }
-}
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .print-only, .print-only * {
-    visibility: visible;
-  }
-  .print-only {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: #fdfaf3 !important; /* Subtle paper color */
-  }
+/* Print Styles removed for html2canvas */
+.receipt-wrapper {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
 }
 
 /* Receipt Container */

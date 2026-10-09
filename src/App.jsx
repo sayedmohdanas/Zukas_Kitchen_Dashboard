@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from './firebase/firebase.js';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import html2canvas from 'html2canvas';
 import localPrizes from './data/prizes.js';
 import Receipt from './components/Receipt';
 // Menu Inventory from Zukas Kitchen
@@ -362,10 +363,55 @@ function App() {
 
   useEffect(() => {
     if (printOrder) {
-      setTimeout(() => {
-        window.print();
-        setTimeout(() => setPrintOrder(null), 500); // clear after print dialog closes
-      }, 300);
+      setTimeout(async () => {
+        try {
+          const element = document.getElementById('receipt-capture-area');
+          if (!element) return;
+          
+          const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#fdfaf3' });
+          canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const file = new File([blob], `Receipt-${printOrder.id}.jpg`, { type: 'image/jpeg' });
+            
+            // Format WhatsApp text
+            let phone = printOrder.phone || '';
+            if (phone.startsWith('0')) phone = '+91' + phone.substring(1);
+            if (!phone.startsWith('+')) phone = '+91' + phone;
+            phone = phone.replace(/[^0-9]/g, ''); // leave only numbers
+            
+            const message = `Here is your bill from Zukas Kitchen! ♥`;
+            
+            try {
+              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                  title: 'Zukas Kitchen Receipt',
+                  text: message,
+                  files: [file]
+                });
+              } else {
+                // Fallback: Download image and open WhatsApp web
+                const link = document.createElement('a');
+                link.download = `Receipt-${printOrder.id}.jpg`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                
+                if (phone && phone.length > 9) {
+                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                } else {
+                  alert("Receipt downloaded. You can now send it to the customer manually.");
+                }
+              }
+            } catch (shareErr) {
+              console.error("Error sharing", shareErr);
+            } finally {
+              setPrintOrder(null);
+            }
+          }, 'image/jpeg', 0.9);
+        } catch(e) {
+           console.error("html2canvas error", e);
+           setPrintOrder(null);
+        }
+      }, 500); // Wait for render
     }
   }, [printOrder]);
 
