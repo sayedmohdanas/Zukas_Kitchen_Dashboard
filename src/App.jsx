@@ -1008,7 +1008,7 @@ function App() {
                                     <div key={i} className="order-item"><span className="item-qty">{item.qty}x</span><span>{item.name}</span></div>
                                   ))}
                                   {order.offerName && <div style={{ fontSize: '12px', color: 'var(--accent-primary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Gift size={12} /> {order.offerName}</div>}
-                                  {authRole === 'owner' && <div style={{ marginTop: '4px', fontWeight: 600, color: 'var(--success)' }}>Total: ₹ {order.total}</div>}
+                                  <div style={{ marginTop: '4px', fontWeight: 600, color: order.paymentStatus === 'PAID' ? 'var(--success)' : 'var(--danger)' }}>Total: ₹ {order.total} ({order.paymentStatus || 'UNPAID'})</div>
                                 </div>
                               </td>
                               <td>
